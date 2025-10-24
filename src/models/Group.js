@@ -1,195 +1,72 @@
-// src/models/Group.js
 import mongoose from "mongoose";
 
+const { Schema, model } = mongoose;
 
-const QueueItemSchema = new mongoose.Schema(
+const QueueItemSchema = new Schema(
   {
-    id: { 
-      type: String, 
-      required: true 
-    },
-    trackId: { 
-      type: String, 
-      default: null 
-    },
-    trackUrl: { 
-      type: String, 
-      required: true 
-    },
-    title: { 
-      type: String, 
-      default: "" 
-    },
-    artist: { 
-      type: String, 
-      default: "" 
-    },
-    durationSec: { 
-      type: Number, 
-      default: null 
-    },
-    addedBy: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "User" 
-    },
-    addedAt: { 
-      type: Date, 
-      default: Date.now 
-    },
-    meta: { type: mongoose.Schema.Types.Mixed },
-  },{ _id: false });
-
-const QueueSchema = new mongoose.Schema(
-  {
-    item: { 
-      type: [QueueItemSchema], 
-      default: [] 
-    },
-    currentIndex: { 
-      type: Number, 
-      default: -1 
-    },
-    version: { 
-      type: Number, 
-      default: 0 
-    },
-    history: {
-      type: [
-        {
-          id: String,
-          title: String,
-          artist: String,
-          playedAt: Date,
-        },
-      ],
-      default: [],
-    },
+    id: { type: String, required: true },          // client uses this for move/remove
+    trackUrl: { type: String, required: true },
+    title: { type: String, default: "" },
+    artist: { type: String, default: "" },
+    durationSec: { type: Number },
   },
   { _id: false }
 );
 
-const Playbackschema = new mongoose.Schema(
+const MemberSchema = new Schema(
   {
-    trackUrl: { 
-      type: String, 
-      default: null 
+    user: {
+      ref: { type: Schema.Types.ObjectId, ref: "User", required: true },
+      isAdmin: { type: Boolean, default: false },
+      isMute: { type: Boolean, default: false },
+      isPinned: { type: Boolean, default: false },
+      isOnline: { type: Boolean, default: false },
     },
-    isPlaying: { 
-      type: Boolean, 
-      default: false 
-    },
-    startAtServerMs: { 
-      type: Number, 
-      default: 0 
-    },
-    startoffsetSec: { 
-      type: Number, 
-      default: 0 
-    },
-    updatedBy: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "User" 
-    },
-  },{ _id: false });
+    joinedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
 
-
-const UserWithFlagsSchema = new mongoose.Schema(
+const GroupSchema = new Schema(
   {
-    ref: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "User", 
-      required: true 
-    },
-    isAdmin: { 
-      type: Boolean, 
-      default: false 
-    },
-    isMute: { 
-      type: Boolean, 
-      default: false 
-    },
-    isPinned: { 
-      type: Boolean, 
-      default: false 
-    },
-    isOnline: { 
-      type: Boolean, 
-      default: false 
-    },
-  },{ _id: false });
+    groupName: { type: String, required: true },
+    groupSubtitle: { type: String, default: "" },
+    groupCode: { type: String, required: true, unique: true },
+    groupImage: { type: String },
+    groupImagePublicId: { type: String },
 
-const MemberSchema = new mongoose.Schema(
-  {
-    user: { 
-      type: UserWithFlagsSchema, 
-      required: true 
-    },
-    joinedAt: { 
-      type: Date, 
-      default: Date.now 
-    },
-  },{ _id: false });
+    members: { type: [MemberSchema], default: [] },
 
-const groupSchema = new mongoose.Schema(
-  {
-    groupName: { 
-      type: String, 
-      required: true 
-    },
-    groupSubtitle: { 
-      type: String, 
-      required: true 
-    },
-    groupCode: { 
-      type: String, 
-      unique: true, 
-      required: true 
-    },
-    groupImage: { 
-      type: String, 
-      default: "" 
-    },
-    groupImagePublicId: { 
-      type: String, 
-      default: "" 
+    playback: {
+      trackUrl: { type: String, default: null },
+      isPlaying: { type: Boolean, default: false },
+      startAtServerMs: { type: Number, default: 0 },
+      startOffsetSec: { type: Number, default: 0 },
+      updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
     },
 
-    members: {
-      type: [MemberSchema],
-      default: [],
-    },
-
-    playback: { 
-      type: Playbackschema, 
-      default: () => ({}) 
-    },
-    queue: { 
-      type: QueueSchema, 
-      default: () => ({}) 
+    // ✅ normalized queue shape (plural `items`)
+    queue: {
+      items: { type: [QueueItemSchema], default: [] },
+      currentIndex: { type: Number, default: -1 },
+      version: { type: Number, default: 0 },
+      history: { type: Array, default: [] },
     },
 
     settings: {
-      allowListenerEnqueue: { 
-        type: Boolean, 
-        default: true 
-      },
+      allowListenerEnqueue: { type: Boolean, default: true },
     },
-  },{ timestamps: true });
+  },
+  { timestamps: true }
+);
 
-// Helpful index for membership queries
-groupSchema.index({ "members.user.ref": 1 });
+// Defensive normalization (handles any lingering legacy docs safely)
+GroupSchema.pre("validate", function normalizeQueue() {
+  this.queue = this.queue || {};
+  if (!Array.isArray(this.queue.items)) this.queue.items = [];
+  if (typeof this.queue.currentIndex !== "number") this.queue.currentIndex = -1;
+  if (typeof this.queue.version !== "number") this.queue.version = 0;
+  if (!Array.isArray(this.queue.history)) this.queue.history = [];
+});
 
-// Convenience helpers (optional)
-groupSchema.methods.isMember = function (userId) {
-  const id = String(userId);
-  return this.members.some((m) => String(m.user?.ref) === id);
-};
-
-groupSchema.methods.isAdmin = function (userId) {
-  const id = String(userId);
-  return this.members.some(
-    (m) => String(m.user?.ref) === id && m.user?.isAdmin === true
-  );
-};
-
-export default mongoose.model("Group", groupSchema);
+export default model("Group", GroupSchema);

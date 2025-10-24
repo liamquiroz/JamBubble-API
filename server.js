@@ -24,9 +24,12 @@ import publicInviteRoutes from './src/routes/publicInviteRoutes.js';
 import {initSendGrid} from './src/services/inviteMail.js';
 import {initTwilio} from './src/services/inviteSms.js';
 
-
 //socket
-import { initSocket } from './src/realtime/socket.js';
+import { initSocket } from './src/realtime/index.js';
+import { startPresenceSweeper } from './src/realtime/presence/job/presence.sweeper.js';
+
+//get data from cloud in json
+import jsonRegistryRoutes from './src/routes/jsonRegistryRoutes.js';
 
 dotenv.config();
 
@@ -57,8 +60,14 @@ app.use('/',publicInviteRoutes);
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 initSocket(server);
+
+startPresenceSweeper();
+
 initSendGrid();
 initTwilio();
+
+//json get from cloud
+app.use('/api', jsonRegistryRoutes);
 
 connectDB().then(() => {
  server.listen(PORT, () => {

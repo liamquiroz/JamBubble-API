@@ -10,3 +10,7 @@ export const log = (...args) => {
 export const error = (...args) => {
     if (logEnabled) console.error(`[ERROR]`, ...args);
 };
+
+export const warn = (...args) => {
+    if (logEnabled) console.warn(`[warn]`, ...args);
+};

@@ -94,19 +94,29 @@ export const getUserProfile = async (req, res) => {
 //Update profile
 export const updateUserProfile = async (req, res) => {
   try {
-    const { fName, lName, latitude, longitude, newPassword } = req.body;
+    const { fName, lName, latitude, longitude, newPassword, profilePic } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: "User Not Found" });
 
     if (typeof fName === "string") user.fName = fName;
     if (typeof lName === "string") user.lName = lName;
+
     if (latitude !== undefined) user.latitude = latitude;
     if (longitude !== undefined) user.longitude = longitude;
-    if (newPassword) user.password = await bcrypt.hash(newPassword, 10);
+
+    if (typeof profilePic === "string" && profilePic.trim() !== "") {
+      user.profilePic = profilePic.trim();
+    }
+
+    
+    if (newPassword) {
+      user.password = await bcrypt.hash(newPassword, 10);
+    }
 
     await user.save();
 
     const payload = toClient(user);
+
     res
       .status(200)
       .set("ETag", etagFor(user))

@@ -17,6 +17,7 @@ import path from 'path';
 import authRoutes from './src/routes/authRoutes.js';
 import musicRoutes from './src/routes/musicRoutes.js';
 import uploadProfilePic from './src/routes/userRoutes.js';
+import playlistRoutes from './src/routes/playlistRoutes.js';
 
 //share Link & invite link
 import inviteShareRoutes from './src/routes/inviteShareRoutes.js';
@@ -50,6 +51,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/music', musicRoutes);
 app.use('/api/user', uploadProfilePic);
 app.use('/api/group', groupRoutes);
+app.use('/api/playlists', playlistRoutes);
 app.use(express.static('public'));
 
 //sahre and Invite Link Routes

@@ -163,6 +163,6 @@ export async function sweepPresence(logger = console) {
     }
   } while (cursor !== "0");
 
-  logger.info?.(`[presence] sweep processed=${processed} offlined=${offlined}`);
+  //logger.info?.(`[presence] sweep processed=${processed} offlined=${offlined}`);
   return { processed, offlined };
 }

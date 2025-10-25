@@ -1,3 +1,4 @@
+//src/utils/uploadServices/cloudinaryUploader.js
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 import { log, error } from '../logger.js';
@@ -67,6 +68,31 @@ export const groupImageFile = async (file) => {
         const result= await cloudinary.uploader.upload(file.path, {
             resource_type:'image',
             folder: 'group_pics'
+        });
+
+        //clean temp
+                fs.unlink(file.path, (err) => {
+            if(err) {
+                error('temp file deleted failed.', err);
+            } else {
+                log(`temp file deleted ${file.path}`);
+            }
+        });
+
+        return {
+            url: result.secure_url,
+            publicId: result.public_id
+        };
+    } catch (err) {
+        throw err;
+    }
+};
+
+export const playlistImageFile = async (file) => {
+    try {
+        const result= await cloudinary.uploader.upload(file.path, {
+            resource_type:'image',
+            folder: 'playlist_pics'
         });
 
         //clean temp

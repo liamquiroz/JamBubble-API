@@ -43,18 +43,6 @@ export const getMyTrack = async (req, res) => {
     }
 };
 
-//Stream Track
-export const streamTrack = async(req, res) => {
-    try {
-        const track = await Music.findById(req.params.id);
-        if (!track) return res.status(404).json({ message: 'Track not found'});
-        
-        res.redirect(track.fileUrl); //cloud url
-    } catch (error) {
-        res.status(500).json({ message: 'error striming track'});
-    }
-};
-
 //Delete Track
 export const deleteTrack = async (req, res) => {
     try {
